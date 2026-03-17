@@ -17,60 +17,96 @@ serverless-projet-assets:
       - prd
 
 serverless-projet-stg:
-  image: python:3.8
+  image: python:3.10
   stage: deploy
   variables:
     GIT_STRATEGY: fetch
   before_script:
     - apt-get update -y
-    - pip3 install boto3
+    - apt-get install npm -y
+    - pip3 install --break-system-packages boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python3 --version
   script:
-    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_user
+    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_stg
   only:
     refs:
       - stg
+  environment:
+    name: stg
+    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
+  after_script:
+    - echo "Déploiement STG USER terminé"
 
 serverless-projet-prd:
-  image: python:3.8
+  image: python:3.10
   stage: deploy
   variables:
     GIT_STRATEGY: fetch
   before_script:
     - apt-get update -y
-    - pip3 install boto3
+    - apt-get install npm -y
+    - pip3 install --break-system-packages boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python3 --version
   script:
-    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_admin
+    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_prd
   only:
     refs:
       - prd
+  environment:
+    name: prd
+    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
+  after_script:
+    - echo "Déploiement STG ADMIN terminé"
 
 serverless-projet-admin-stg:
-  image: python:3.8
+  image: python:3.10
   stage: deploy
   variables:
     GIT_STRATEGY: fetch
   before_script:
     - apt-get update -y
-    - pip3 install boto3
+    - apt-get install npm -y
+    - pip3 install --break-system-packages boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python3 --version
   script:
-    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_user
-  only:
-    refs:
-      - stg
-
-serverless-projet-admin-prd:
-  image: python:3.8
-  stage: deploy
-  variables:
-    GIT_STRATEGY: fetch
-  before_script:
-    - apt-get update -y
-    - pip3 install boto3
-  script:
-    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_admin
+    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
   only:
     refs:
       - prd
+  environment:
+    name: prd
+    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
+  after_script:
+    - echo "Déploiement PRD USER terminé"
+
+serverless-projet-admin-prd:
+  image: python:3.10
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - apt-get install npm -y
+    - pip3 install --break-system-packages boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python3 --version
+  script:
+    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_admin_prd
+  only:
+    refs:
+      - prd
+  environment:
+    name: prd
+    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
+  after_script:
+    - echo "Déploiement PRD ADMIN terminé"
 
 
 
