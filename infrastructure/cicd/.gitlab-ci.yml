@@ -16,7 +16,7 @@ serverless-projet-assets:
   script:
     - python infrastructure/scripts/deploy.folder.py serverless_projet_assets
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "stg"'
+    - if: '$CI_COMMIT_BRANCH == "stg"'
     - if: '$CI_COMMIT_BRANCH == "main"'
 
 serverless-projet-stg:
@@ -36,7 +36,7 @@ serverless-projet-stg:
     - npm install
     - python infrastructure/scripts/deploy.front.py serverless_projet_stg
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "stg"'
+    - if: '$CI_COMMIT_BRANCH == "stg"'
   environment:
     name: stg
   after_script:
@@ -82,7 +82,7 @@ serverless-projet-admin-stg:
     - npm install
     - python infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "stg"'
+    - if: '$CI_COMMIT_BRANCH == "stg"'
   environment:
     name: stg
   after_script:
