@@ -1,146 +1,63 @@
 stages:
-- deploy
+  - deploy
 
 serverless-projet-assets:
-  image: python:3.8
-  stage: deploy
+  image: python:3.10
   variables:
     GIT_STRATEGY: fetch
   before_script:
     - apt-get update -y
-    - pip3 install boto3
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python --version
   script:
-    - python3.8 infrastructure/scripts/deploy.folder.py serverless_projet_assets
-  only:
-    refs:
-      - stg
-      - prd
+    - python infrastructure/scripts/deploy.folder.py serverless_projet_assets
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 serverless-projet-stg:
   image: python:3.10
-  stage: deploy
   variables:
     GIT_STRATEGY: fetch
   before_script:
     - apt-get update -y
-    - apt-get install npm -y
-    - pip3 install --break-system-packages boto3 python-dotenv
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
     - node --version
     - npm --version
-    - python3 --version
+    - python --version
   script:
-    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_stg
-  only:
-    refs:
-      - stg
+    - cd code/api/my-app
+    - npm install
+    - python infrastructure/scripts/deploy.front.py serverless_projet_stg
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg"'
   environment:
     name: stg
-    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
   after_script:
     - echo "Déploiement STG USER terminé"
 
 serverless-projet-prd:
   image: python:3.10
-  stage: deploy
   variables:
     GIT_STRATEGY: fetch
   before_script:
     - apt-get update -y
-    - apt-get install npm -y
-    - pip3 install --break-system-packages boto3 python-dotenv
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
     - node --version
     - npm --version
-    - python3 --version
+    - python --version
   script:
-    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_prd
-  only:
-    refs:
-      - prd
-  environment:
-    name: prd
-    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
-  after_script:
-    - echo "Déploiement STG ADMIN terminé"
-
-serverless-projet-admin-stg:
-  image: python:3.10
-  stage: deploy
-  variables:
-    GIT_STRATEGY: fetch
-  before_script:
-    - apt-get update -y
-    - apt-get install npm -y
-    - pip3 install --break-system-packages boto3 python-dotenv
-    - node --version
-    - npm --version
-    - python3 --version
-  script:
-    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
-  only:
-    refs:
-      - prd
-  environment:
-    name: prd
-    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
-  after_script:
-    - echo "Déploiement PRD USER terminé"
-
-serverless-projet-admin-prd:
-  image: python:3.10
-  stage: deploy
-  variables:
-    GIT_STRATEGY: fetch
-  before_script:
-    - apt-get update -y
-    - apt-get install npm -y
-    - pip3 install --break-system-packages boto3 python-dotenv
-    - node --version
-    - npm --version
-    - python3 --version
-  script:
-    - python3.10 infrastructure/scripts/deploy.front.py serverless_projet_admin_prd
-  only:
-    refs:
-      - prd
-  environment:
-    name: prd
-    ##url: https://sophieiimproject-dev-nuxtsophieiim.s3.eu-west-3.amazonaws.com/index.html
-  after_script:
-    - echo "Déploiement PRD ADMIN terminé"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-serverless-projet-prd:
-  image: node:20
-  stage: deploy
-  variables:
-    GIT_STRATEGY: fetch
-  before_script:
-    - node --version
-    - npm --version
-  script:
-    - cd api/my-app
+    - cd code/api/my-app
     - npm install
+    - python infrastructure/scripts/deploy.front.py serverless_projet_prd
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
@@ -148,35 +65,45 @@ serverless-projet-prd:
   after_script:
     - echo "Déploiement PRD USER terminé"
 
-
 serverless-projet-admin-stg:
-  image: node:20
-  stage: deploy
+  image: python:3.10
   variables:
     GIT_STRATEGY: fetch
   before_script:
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
     - node --version
     - npm --version
+    - python --version
   script:
-    - cd api/my-app
+    - cd code/api/my-app
     - npm install
+    - python infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
+  environment:
+    name: stg
   after_script:
     - echo "Déploiement STG ADMIN terminé"
 
-
 serverless-projet-admin-prd:
-  image: node:20
-  stage: deploy
+  image: python:3.10
   variables:
     GIT_STRATEGY: fetch
   before_script:
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
     - node --version
     - npm --version
+    - python --version
   script:
-    - cd api/my-app
+    - cd code/api/my-app
     - npm install
+    - python infrastructure/scripts/deploy.front.py serverless_projet_admin_prd
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
