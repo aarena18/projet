@@ -1,7 +1,5 @@
-stages:
-  - deploy
-
 serverless-projet-assets:
+  stage: deploy
   image: python:3.10
   variables:
     GIT_STRATEGY: fetch
@@ -20,6 +18,7 @@ serverless-projet-assets:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
 serverless-projet-stg:
+  stage: deploy
   image: python:3.10
   variables:
     GIT_STRATEGY: fetch
@@ -43,6 +42,7 @@ serverless-projet-stg:
     - echo "Déploiement STG USER terminé"
 
 serverless-projet-prd:
+  stage: deploy
   image: python:3.10
   variables:
     GIT_STRATEGY: fetch
@@ -66,6 +66,7 @@ serverless-projet-prd:
     - echo "Déploiement PRD USER terminé"
 
 serverless-projet-admin-stg:
+  stage: deploy
   image: python:3.10
   variables:
     GIT_STRATEGY: fetch
@@ -89,6 +90,7 @@ serverless-projet-admin-stg:
     - echo "Déploiement STG ADMIN terminé"
 
 serverless-projet-admin-prd:
+  stage: deploy
   image: python:3.10
   variables:
     GIT_STRATEGY: fetch
