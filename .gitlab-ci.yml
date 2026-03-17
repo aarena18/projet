@@ -43,7 +43,6 @@ serverless-projet-admin-stg:
   variables:
     GIT_STRATEGY: fetch
   before_script:
-    - cd api
     - node --version
     - npm --version
   script:
