@@ -1,0 +1,149 @@
+stages:
+- deploy
+
+serverless-projet-assets:
+  image: python:3.8
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - pip3 install boto3
+  script:
+    - python3.8 infrastructure/scripts/deploy.folder.py serverless_projet_assets
+  only:
+    refs:
+      - stg
+      - prd
+
+serverless-projet-stg:
+  image: python:3.8
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - pip3 install boto3
+  script:
+    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_user
+  only:
+    refs:
+      - stg
+
+serverless-projet-prd:
+  image: python:3.8
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - pip3 install boto3
+  script:
+    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_admin
+  only:
+    refs:
+      - prd
+
+serverless-projet-admin-stg:
+  image: python:3.8
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - pip3 install boto3
+  script:
+    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_user
+  only:
+    refs:
+      - stg
+
+serverless-projet-admin-prd:
+  image: python:3.8
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - pip3 install boto3
+  script:
+    - python3.8 infrastructure/scripts/deploy.front.py serverless_projet_admin
+  only:
+    refs:
+      - prd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+serverless-projet-prd:
+  image: node:20
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - node --version
+    - npm --version
+  script:
+    - cd api/my-app
+    - npm install
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  environment:
+    name: prd
+  after_script:
+    - echo "Déploiement PRD USER terminé"
+
+
+serverless-projet-admin-stg:
+  image: node:20
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - node --version
+    - npm --version
+  script:
+    - cd api/my-app
+    - npm install
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg"'
+  after_script:
+    - echo "Déploiement STG ADMIN terminé"
+
+
+serverless-projet-admin-prd:
+  image: node:20
+  stage: deploy
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - node --version
+    - npm --version
+  script:
+    - cd api/my-app
+    - npm install
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  environment:
+    name: prd
+  after_script:
+    - echo "Déploiement PRD ADMIN terminé"
