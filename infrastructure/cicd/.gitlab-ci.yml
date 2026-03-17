@@ -12,7 +12,7 @@ serverless-projet-assets:
     - npm --version
     - python --version
   script:
-    - python infrastructure/scripts/deploy.folder.py serverless_projet_assets
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.folder.py assets
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -33,7 +33,7 @@ serverless-projet-stg:
   script:
     - cd code/api/my-app
     - npm install
-    - python infrastructure/scripts/deploy.front.py serverless_projet_stg
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.front.py serverless_projet_stg
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
   environment:
@@ -57,7 +57,7 @@ serverless-projet-prd:
   script:
     - cd code/api/my-app
     - npm install
-    - python infrastructure/scripts/deploy.front.py serverless_projet_prd
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.front.py serverless_projet_prd
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
@@ -81,7 +81,7 @@ serverless-projet-admin-stg:
   script:
     - cd code/api/my-app
     - npm install
-    - python infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
   environment:
@@ -105,7 +105,7 @@ serverless-projet-admin-prd:
   script:
     - cd code/api/my-app
     - npm install
-    - python infrastructure/scripts/deploy.front.py serverless_projet_admin_prd
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.front.py serverless_projet_admin_prd
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
