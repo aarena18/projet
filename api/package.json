@@ -1,5 +1,9 @@
 {
+  "scripts": {
+    "deploy": "serverless deploy --stage stg"
+  },
   "dependencies": {
     "hono": "^4.12.8"
   }
 }
+

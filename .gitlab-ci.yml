@@ -12,7 +12,6 @@ serverless-projet-stg:
   script:
     - cd api
     - npm install
-    - npm run deploy
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
   after_script:
@@ -25,12 +24,11 @@ serverless-projet-prd:
   variables:
     GIT_STRATEGY: fetch
   before_script:
-    - cd api
     - node --version
     - npm --version
   script:
+    - cd api
     - npm install
-    - npm run deploy
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
@@ -49,8 +47,8 @@ serverless-projet-admin-stg:
     - node --version
     - npm --version
   script:
+    - cd api
     - npm install
-    - npm run deploy
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
   after_script:
@@ -63,12 +61,11 @@ serverless-projet-admin-prd:
   variables:
     GIT_STRATEGY: fetch
   before_script:
-    - cd api
     - node --version
     - npm --version
   script:
+    - cd api
     - npm install
-    - npm run deploy
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
