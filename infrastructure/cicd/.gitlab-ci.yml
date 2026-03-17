@@ -1,3 +1,7 @@
+stages:
+  - deploy
+  - test
+
 serverless-projet-assets:
   stage: deploy
   image: python:3.10
