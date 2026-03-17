@@ -10,6 +10,7 @@ serverless-projet-stg:
     - node --version
     - npm --version
   script:
+    - cd api
     - npm install
     - npm run deploy
   rules:
@@ -24,6 +25,7 @@ serverless-projet-prd:
   variables:
     GIT_STRATEGY: fetch
   before_script:
+    - cd api
     - node --version
     - npm --version
   script:
@@ -43,6 +45,7 @@ serverless-projet-admin-stg:
   variables:
     GIT_STRATEGY: fetch
   before_script:
+    - cd api
     - node --version
     - npm --version
   script:
@@ -60,6 +63,7 @@ serverless-projet-admin-prd:
   variables:
     GIT_STRATEGY: fetch
   before_script:
+    - cd api
     - node --version
     - npm --version
   script:
