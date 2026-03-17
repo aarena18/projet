@@ -10,7 +10,7 @@ serverless-projet-stg:
     - node --version
     - npm --version
   script:
-    - cd api
+    - cd api/my-app
     - npm install
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
@@ -27,7 +27,7 @@ serverless-projet-prd:
     - node --version
     - npm --version
   script:
-    - cd api
+    - cd api/my-app
     - npm install
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -46,7 +46,7 @@ serverless-projet-admin-stg:
     - node --version
     - npm --version
   script:
-    - cd api
+    - cd api/my-app
     - npm install
   rules:
     - if: '$CI_COMMIT_BRANCH == "stg"'
@@ -63,7 +63,7 @@ serverless-projet-admin-prd:
     - node --version
     - npm --version
   script:
-    - cd api
+    - cd api/my-app
     - npm install
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
