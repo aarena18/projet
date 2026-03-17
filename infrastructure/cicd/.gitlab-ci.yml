@@ -16,7 +16,8 @@ serverless-projet-assets:
   script:
     - python infrastructure/scripts/deploy.folder.py serverless_projet_assets
   rules:
-    - when: always
+    - if: '$CI_COMMIT_REF_NAME == "stg"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 serverless-projet-stg:
   image: python:3.10
@@ -35,7 +36,7 @@ serverless-projet-stg:
     - npm install
     - python infrastructure/scripts/deploy.front.py serverless_projet_stg
   rules:
-    - when: always
+    - if: '$CI_COMMIT_REF_NAME == "stg"'
   environment:
     name: stg
   after_script:
@@ -58,7 +59,7 @@ serverless-projet-prd:
     - npm install
     - python infrastructure/scripts/deploy.front.py serverless_projet_prd
   rules:
-    - when: always
+    - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
     name: prd
   after_script:
@@ -81,7 +82,7 @@ serverless-projet-admin-stg:
     - npm install
     - python infrastructure/scripts/deploy.front.py serverless_projet_admin_stg
   rules:
-    - when: always
+    - if: '$CI_COMMIT_REF_NAME == "stg"'
   environment:
     name: stg
   after_script:
@@ -104,7 +105,7 @@ serverless-projet-admin-prd:
     - npm install
     - python infrastructure/scripts/deploy.front.py serverless_projet_admin_prd
   rules:
-    - when: always
+    - if: '$CI_COMMIT_BRANCH == "main"'
   environment:
     name: prd
   after_script:
