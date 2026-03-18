@@ -1,0 +1,22 @@
+{
+  "name": "crons",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/backup.ts",
+    "build": "esbuild --bundle --outfile=./dist/backup.js --platform=node --target=node20 --format=cjs ./src/backup.ts",
+    "zip": "zip -j backup.zip dist/backup.js",
+    "deploy": "npm run build && npm run zip"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "pg": "^8.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.4",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.0.0"
+  }
+}
