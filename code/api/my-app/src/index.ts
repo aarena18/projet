@@ -6,6 +6,8 @@ import { teamRoutes } from "./routes/teams.js";
 import { invitationRoutes } from "./routes/invitations.js";
 import { projectRoutes } from "./routes/projects.js";
 import { taskRoutes } from "./routes/tasks.js";
+import { assetRoutes } from "./routes/assets.js";
+import { adminRoutes } from "./routes/admin.js";
 import "dotenv/config";
 
 const app = new Hono();
@@ -17,6 +19,8 @@ app.route("/", teamRoutes);
 app.route("/", invitationRoutes);
 app.route("/", projectRoutes);
 app.route("/", taskRoutes);
+app.route("/", assetRoutes);
+app.route("/", adminRoutes);
 
 serve({ fetch: app.fetch, port: 3000 }, () => {
   console.log("API démarrée sur http://localhost:3000");
