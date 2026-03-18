@@ -4,8 +4,8 @@ services:
     container_name: serverless_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: serverless-stg
+      POSTGRES_PASSWORD: serverless
+      POSTGRES_DB: serverless_projet
     ports:
       - "5432:5432"
     volumes:
