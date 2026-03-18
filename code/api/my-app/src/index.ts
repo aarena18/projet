@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { serve } from "@hono/node-server";
+import { handle } from "hono/aws-lambda";
 import { authRoutes } from "./routes/auth.js";
 import { userRoutes } from "./routes/users.js";
 import { teamRoutes } from "./routes/teams.js";
@@ -22,8 +22,5 @@ app.route("/", taskRoutes);
 app.route("/", assetRoutes);
 app.route("/", adminRoutes);
 
-serve({ fetch: app.fetch, port: 3000 }, () => {
-  console.log("API démarrée sur http://localhost:3000");
-});
-
+export const handler = handle(app);
 export default app;
