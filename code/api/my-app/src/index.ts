@@ -1,10 +1,16 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/aws-lambda'
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import { authRoutes } from "./routes/auth.js";
+import "dotenv/config";
 
-const app = new Hono()
+const app = new Hono();
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+app.get("/", (c) => c.json({ status: "API OK" }));
 
-export const handler = handle(app)
+app.route("/", authRoutes);
+
+serve({ fetch: app.fetch, port: 3000 }, () => {
+  console.log("API démarrée sur http://localhost:3000");
+});
+
+export default app;
