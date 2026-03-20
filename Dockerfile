@@ -1,13 +1,11 @@
-FROM node:18-alpine
+FROM python:3.8
 
-RUN apt-get update -y && pip3 install boto3 python-dotenv && apt-get install npm -y && npm install --stg
+RUN apt-get update -y && pip3 install boto3 python-dotenv && apt-get install npm -y && npm install -g eslint
 
-WORKDIR /code
+WORKDIR /app
 
-COPY package*.json ./
+COPY . /app
 
-EXPOSE 3000
-
-CMD ["node", "index.js"]
+CMD ["tail", "-f", "/dev/null"]
 
 

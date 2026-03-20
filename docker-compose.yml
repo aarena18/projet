@@ -1,15 +1,13 @@
 services:
-  postgres:
-    image: postgres:15
-    container_name: serverless_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: serverless
-      POSTGRES_DB: serverless_projet
-    ports:
-      - "5432:5432"
+  app:
+    hostname: serverless_aws
+    container_name: serverless_aws
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: tail -f /dev/null
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - .:/app
+    ports:
+      - 3000:3000
+    tty: true
