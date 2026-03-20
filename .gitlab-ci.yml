@@ -1,208 +1,300 @@
 stages:
+  - lint
   - build
   - deploy
 
 variables:
   AWS_DEFAULT_REGION: eu-west-3
 
-# ─── API ─────────────────────────────────────────────────
+# ─── LINT ────────────────────────────────────────────────
+
+eslint:
+  stage: lint
+  image: node:20
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - node --version
+    - npm --version
+  script:
+    - echo "=== Lint front user ==="
+    - cd $CI_PROJECT_DIR/code/serverless_projet_user
+    - npm ci
+    - npx eslint . --max-warnings=0
+    - echo "=== Lint front admin ==="
+    - cd $CI_PROJECT_DIR/code/serverless_projet_admin
+    - npm ci
+    - npx eslint . --max-warnings=0
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  after_script:
+    - echo "ESLint terminé"
+
+# ─── BUILD API ───────────────────────────────────────────
 
 build-api:
   stage: build
   image: node:20
-  only:
-    - stg-ambre
-    - main
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - node --version
+    - npm --version
   script:
-    - cd code/api/my-app
-    - npm install
+    - cd $CI_PROJECT_DIR/code/api/my-app
+    - npm ci
     - npm run build
     - npm run zip
   artifacts:
     paths:
       - code/api/my-app/lambda.zip
     expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
-deploy-api-stg:
-  stage: deploy
-  image: python:3.11
-  only:
-    - stg-ambre
-  needs:
-    - build-api
-  before_script:
-    - pip install awscli --quiet
-  script:
-    - aws lambda update-function-code
-      --function-name serverless-projet-api-stg
-      --zip-file fileb://code/api/my-app/lambda.zip
-      --region eu-west-3
-
-deploy-api-prd:
-  stage: deploy
-  image: python:3.11
-  only:
-    - main
-  needs:
-    - build-api
-  when: manual
-  before_script:
-    - pip install awscli --quiet
-  script:
-    - aws lambda update-function-code
-      --function-name serverless-projet-api-prd
-      --zip-file fileb://code/api/my-app/lambda.zip
-      --region eu-west-3
-
-# ─── CRON ────────────────────────────────────────────────
+# ─── BUILD CRON ──────────────────────────────────────────
 
 build-cron:
   stage: build
   image: node:20
-  only:
-    - stg-ambre
-    - main
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - node --version
+    - npm --version
   script:
-    - cd code/crons
-    - npm install
+    - cd $CI_PROJECT_DIR/code/crons
+    - npm ci
     - npm run build
     - npm run zip
   artifacts:
     paths:
       - code/crons/backup.zip
     expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# ─── DEPLOY ASSETS S3 ────────────────────────────────────
+
+serverless-projet-assets:
+  stage: deploy
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python --version
+  script:
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.folder.py assets
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# ─── DEPLOY API ──────────────────────────────────────────
+
+deploy-api-stg:
+  stage: deploy
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
+  needs:
+    - build-api
+  before_script:
+    - apt-get update -y
+    - python -m pip install --upgrade pip
+    - pip install awscli --quiet
+  script:
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.api.py stg
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+  after_script:
+    - echo "Déploiement API STG terminé"
+
+deploy-api-prd:
+  stage: deploy
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
+  needs:
+    - build-api
+  when: manual
+  before_script:
+    - apt-get update -y
+    - python -m pip install --upgrade pip
+    - pip install awscli --quiet
+  script:
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.api.py prd
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  after_script:
+    - echo "Déploiement API PRD terminé"
+
+# ─── DEPLOY CRON ─────────────────────────────────────────
 
 deploy-cron-stg:
   stage: deploy
-  image: python:3.11
-  only:
-    - stg-ambre
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
   needs:
     - build-cron
   before_script:
+    - apt-get update -y
+    - python -m pip install --upgrade pip
     - pip install awscli --quiet
   script:
-    - aws lambda update-function-code
-      --function-name serverless-projet-cron-backup-stg
-      --zip-file fileb://code/crons/backup.zip
-      --region eu-west-3
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.crons.py stg
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+  after_script:
+    - echo "Déploiement CRON STG terminé"
 
 deploy-cron-prd:
   stage: deploy
-  image: python:3.11
-  only:
-    - main
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
   needs:
     - build-cron
   when: manual
   before_script:
+    - apt-get update -y
+    - python -m pip install --upgrade pip
     - pip install awscli --quiet
   script:
-    - aws lambda update-function-code
-      --function-name serverless-projet-cron-backup-prd
-      --zip-file fileb://code/crons/backup.zip
-      --region eu-west-3
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.crons.py prd
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  after_script:
+    - echo "Déploiement CRON PRD terminé"
 
-# ─── FRONT USER ──────────────────────────────────────────
+# ─── DEPLOY FRONT USER ───────────────────────────────────
 
-build-front-user:
-  stage: build
-  image: node:20
-  only:
-    - stg-ambre
-    - main
-  script:
-    - cd code/serverless_projet_user
-    - npm install
-    - npm run build
-  artifacts:
-    paths:
-      - code/serverless_projet_user/dist/
-    expire_in: 1 hour
-
-deploy-front-user-stg:
+serverless-projet-stg:
   stage: deploy
-  image: python:3.11
-  only:
-    - stg-ambre
-  needs:
-    - build-front-user
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
   before_script:
-    - pip install awscli --quiet
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python --version
+    - npm install -g eslint
+    - eslint --version
   script:
-    - aws s3 sync code/serverless_projet_user/dist/ s3://serverless-projet-www-user-stg --delete --region eu-west-3
-    - aws cloudfront create-invalidation --distribution-id E2ZO4QXW2I9QE7 --paths "/*"
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.react.py www-user stg
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+  environment:
+    name: stg
+  after_script:
+    - echo "Déploiement STG USER terminé"
 
-deploy-front-user-prd:
+serverless-projet-prd:
   stage: deploy
-  image: python:3.11
-  only:
-    - main
-  needs:
-    - build-front-user
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
   when: manual
   before_script:
-    - pip install awscli --quiet
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python --version
+    - npm install -g eslint
+    - eslint --version
   script:
-    - aws s3 sync code/serverless_projet_user/dist/ s3://serverless-projet-www-user-prd --delete --region eu-west-3
-    - aws cloudfront create-invalidation --distribution-id CF_USER_PRD_ID --paths "/*"
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.react.py www-user prd
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  environment:
+    name: prd
+  after_script:
+    - echo "Déploiement PRD USER terminé"
 
-# ─── FRONT ADMIN ─────────────────────────────────────────
+# ─── DEPLOY FRONT ADMIN ──────────────────────────────────
 
-build-front-admin:
-  stage: build
-  image: node:20
-  only:
-    - stg-ambre
-    - main
-  script:
-    - cd code/serverless_projet_admin
-    - npm install
-    - npm run build
-  artifacts:
-    paths:
-      - code/serverless_projet_admin/dist/
-    expire_in: 1 hour
-
-deploy-front-admin-stg:
+serverless-projet-admin-stg:
   stage: deploy
-  image: python:3.11
-  only:
-    - stg-ambre
-  needs:
-    - build-front-admin
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
   before_script:
-    - pip install awscli --quiet
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python --version
+    - npm install -g eslint
+    - eslint --version
   script:
-    - aws s3 sync code/serverless_projet_admin/dist/ s3://serverless-projet-www-admin-stg --delete --region eu-west-3
-    - aws cloudfront create-invalidation --distribution-id E25G9K1GCALBN6 --paths "/*"
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.react.py www-admin stg
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+  environment:
+    name: stg
+  after_script:
+    - echo "Déploiement STG ADMIN terminé"
 
-deploy-front-admin-prd:
+serverless-projet-admin-prd:
   stage: deploy
-  image: python:3.11
-  only:
-    - main
-  needs:
-    - build-front-admin
+  image: python:3.10
+  variables:
+    GIT_STRATEGY: fetch
   when: manual
   before_script:
-    - pip install awscli --quiet
+    - apt-get update -y
+    - apt-get install -y npm
+    - python -m pip install --upgrade pip
+    - pip install boto3 python-dotenv
+    - node --version
+    - npm --version
+    - python --version
+    - npm install -g eslint
+    - eslint --version
   script:
-    - aws s3 sync code/serverless_projet_admin/dist/ s3://serverless-projet-www-admin-prd --delete --region eu-west-3
-    - aws cloudfront create-invalidation --distribution-id CF_ADMIN_PRD_ID --paths "/*"
+    - python $CI_PROJECT_DIR/infrastructure/scripts/deploy.react.py www-admin prd
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  environment:
+    name: prd
+  after_script:
+    - echo "Déploiement PRD ADMIN terminé"
 
 # ─── MIGRATIONS ──────────────────────────────────────────
 
 deploy-migrations-stg:
   stage: deploy
   image: ubuntu:22.04
-  only:
-    - stg-ambre
+  variables:
+    GIT_STRATEGY: fetch
   before_script:
-    - apt-get update -qq && apt-get install -y -qq postgresql-client python3-pip
+    - apt-get update -qq
+    - apt-get install -y -qq postgresql-client python3-pip
     - pip install awscli --quiet
   script:
     - for file in $(ls code/database/migration/*.sql | sort); do
       echo "Migration $file...";
       psql "$DATABASE_URL_STG" -f "$file";
       done
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stg-ambre"'
+  after_script:
+    - echo "Migrations STG terminées"
