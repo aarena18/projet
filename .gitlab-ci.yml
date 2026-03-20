@@ -1,0 +1,208 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  AWS_DEFAULT_REGION: eu-west-3
+
+# ─── API ─────────────────────────────────────────────────
+
+build-api:
+  stage: build
+  image: node:20
+  only:
+    - stg-ambre
+    - main
+  script:
+    - cd code/api/my-app
+    - npm install
+    - npm run build
+    - npm run zip
+  artifacts:
+    paths:
+      - code/api/my-app/lambda.zip
+    expire_in: 1 hour
+
+deploy-api-stg:
+  stage: deploy
+  image: python:3.11
+  only:
+    - stg-ambre
+  needs:
+    - build-api
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws lambda update-function-code
+      --function-name serverless-projet-api-stg
+      --zip-file fileb://code/api/my-app/lambda.zip
+      --region eu-west-3
+
+deploy-api-prd:
+  stage: deploy
+  image: python:3.11
+  only:
+    - main
+  needs:
+    - build-api
+  when: manual
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws lambda update-function-code
+      --function-name serverless-projet-api-prd
+      --zip-file fileb://code/api/my-app/lambda.zip
+      --region eu-west-3
+
+# ─── CRON ────────────────────────────────────────────────
+
+build-cron:
+  stage: build
+  image: node:20
+  only:
+    - stg-ambre
+    - main
+  script:
+    - cd code/crons
+    - npm install
+    - npm run build
+    - npm run zip
+  artifacts:
+    paths:
+      - code/crons/backup.zip
+    expire_in: 1 hour
+
+deploy-cron-stg:
+  stage: deploy
+  image: python:3.11
+  only:
+    - stg-ambre
+  needs:
+    - build-cron
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws lambda update-function-code
+      --function-name serverless-projet-cron-backup-stg
+      --zip-file fileb://code/crons/backup.zip
+      --region eu-west-3
+
+deploy-cron-prd:
+  stage: deploy
+  image: python:3.11
+  only:
+    - main
+  needs:
+    - build-cron
+  when: manual
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws lambda update-function-code
+      --function-name serverless-projet-cron-backup-prd
+      --zip-file fileb://code/crons/backup.zip
+      --region eu-west-3
+
+# ─── FRONT USER ──────────────────────────────────────────
+
+build-front-user:
+  stage: build
+  image: node:20
+  only:
+    - stg-ambre
+    - main
+  script:
+    - cd code/serverless_projet_user
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - code/serverless_projet_user/dist/
+    expire_in: 1 hour
+
+deploy-front-user-stg:
+  stage: deploy
+  image: python:3.11
+  only:
+    - stg-ambre
+  needs:
+    - build-front-user
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws s3 sync code/serverless_projet_user/dist/ s3://serverless-projet-www-user-stg --delete --region eu-west-3
+    - aws cloudfront create-invalidation --distribution-id E2ZO4QXW2I9QE7 --paths "/*"
+
+deploy-front-user-prd:
+  stage: deploy
+  image: python:3.11
+  only:
+    - main
+  needs:
+    - build-front-user
+  when: manual
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws s3 sync code/serverless_projet_user/dist/ s3://serverless-projet-www-user-prd --delete --region eu-west-3
+    - aws cloudfront create-invalidation --distribution-id CF_USER_PRD_ID --paths "/*"
+
+# ─── FRONT ADMIN ─────────────────────────────────────────
+
+build-front-admin:
+  stage: build
+  image: node:20
+  only:
+    - stg-ambre
+    - main
+  script:
+    - cd code/serverless_projet_admin
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - code/serverless_projet_admin/dist/
+    expire_in: 1 hour
+
+deploy-front-admin-stg:
+  stage: deploy
+  image: python:3.11
+  only:
+    - stg-ambre
+  needs:
+    - build-front-admin
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws s3 sync code/serverless_projet_admin/dist/ s3://serverless-projet-www-admin-stg --delete --region eu-west-3
+    - aws cloudfront create-invalidation --distribution-id E25G9K1GCALBN6 --paths "/*"
+
+deploy-front-admin-prd:
+  stage: deploy
+  image: python:3.11
+  only:
+    - main
+  needs:
+    - build-front-admin
+  when: manual
+  before_script:
+    - pip install awscli --quiet
+  script:
+    - aws s3 sync code/serverless_projet_admin/dist/ s3://serverless-projet-www-admin-prd --delete --region eu-west-3
+    - aws cloudfront create-invalidation --distribution-id CF_ADMIN_PRD_ID --paths "/*"
+
+# ─── MIGRATIONS ──────────────────────────────────────────
+
+deploy-migrations-stg:
+  stage: deploy
+  image: ubuntu:22.04
+  only:
+    - stg-ambre
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq postgresql-client python3-pip
+    - pip install awscli --quiet
+  script:
+    - for file in $(ls code/database/migration/*.sql | sort); do
+      echo "Migration $file...";
+      psql "$DATABASE_URL_STG" -f "$file";
+      done
