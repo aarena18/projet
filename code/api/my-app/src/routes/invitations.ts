@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireAuth } from "../middlewares/auth.js";
-import { getUserByEmail } from "../services/cognito.js";
+import { getUserByEmail, getUserBySub } from "../services/cognito.js";
+import { sendInvitationEmail } from "../services/ses.js";
 import { db } from "../db/index.js";
 
 export const invitationRoutes = new Hono();
@@ -14,7 +15,6 @@ invitationRoutes.post("/teams/:teamId/invitations", requireAuth, async (c) => {
 
     if (!email) return c.json({ error: "email est requis" }, 400);
 
-    // Vérifie que l'invitant est membre de la team
     const memberCheck = await db.query(
       `SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2`,
       [teamId, userId],
@@ -23,13 +23,11 @@ invitationRoutes.post("/teams/:teamId/invitations", requireAuth, async (c) => {
       return c.json({ error: "Accès refusé" }, 403);
     }
 
-    // Vérifie que l'email existe dans Cognito
     const cognitoUser = await getUserByEmail(email);
     if (!cognitoUser) {
       return c.json({ error: "Aucun compte trouvé avec cet email" }, 404);
     }
 
-    // Vérifie que l'user n'est pas déjà membre
     const userInDb = await db.query(
       `SELECT id FROM users WHERE cognito_sub = $1`,
       [cognitoUser.sub],
@@ -44,7 +42,6 @@ invitationRoutes.post("/teams/:teamId/invitations", requireAuth, async (c) => {
       }
     }
 
-    // Vérifie qu'une invitation pending n'existe pas déjà
     const existingInvite = await db.query(
       `SELECT id FROM invitations WHERE team_id = $1 AND email = $2 AND status = 'pending'`,
       [teamId, email],
@@ -58,8 +55,18 @@ invitationRoutes.post("/teams/:teamId/invitations", requireAuth, async (c) => {
       `INSERT INTO invitations (team_id, email) VALUES ($1, $2) RETURNING *`,
       [teamId, email],
     );
+    const invitation = result.rows[0];
 
-    return c.json(result.rows[0], 201);
+    // Récupère le nom de la team
+    const teamResult = await db.query(`SELECT name FROM teams WHERE id = $1`, [
+      teamId,
+    ]);
+    const teamName = teamResult.rows[0].name;
+
+    // Envoie l'email via SES
+    await sendInvitationEmail(email, teamName, invitation.id);
+
+    return c.json(invitation, 201);
   } catch (err) {
     console.error(err);
     return c.json({ error: "Erreur serveur" }, 500);
@@ -71,14 +78,11 @@ invitationRoutes.get("/invitations", requireAuth, async (c) => {
   try {
     const userId = c.get("userId");
 
-    // Récupère l'email depuis Cognito
     const userResult = await db.query(
       `SELECT cognito_sub FROM users WHERE id = $1`,
       [userId],
     );
-    const cognitoUser = await (
-      await import("../services/cognito.js")
-    ).getUserBySub(userResult.rows[0].cognito_sub);
+    const cognitoUser = await getUserBySub(userResult.rows[0].cognito_sub);
 
     const result = await db.query(
       `SELECT i.*, t.name as team_name
@@ -105,7 +109,6 @@ invitationRoutes.post(
       const userId = c.get("userId");
       const { invitationId } = c.req.param();
 
-      // Récupère l'invitation
       const inviteResult = await db.query(
         `SELECT * FROM invitations WHERE id = $1 AND status = 'pending'`,
         [invitationId],
@@ -115,26 +118,21 @@ invitationRoutes.post(
       }
       const invitation = inviteResult.rows[0];
 
-      // Vérifie que c'est bien l'invitation de cet user
       const userResult = await db.query(
         `SELECT cognito_sub FROM users WHERE id = $1`,
         [userId],
       );
-      const cognitoUser = await (
-        await import("../services/cognito.js")
-      ).getUserBySub(userResult.rows[0].cognito_sub);
+      const cognitoUser = await getUserBySub(userResult.rows[0].cognito_sub);
       if (cognitoUser.email !== invitation.email) {
         return c.json({ error: "Accès refusé" }, 403);
       }
 
-      // Ajoute comme membre
       await db.query(
         `INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)
        ON CONFLICT (team_id, user_id) DO NOTHING`,
         [invitation.team_id, userId],
       );
 
-      // Met à jour le statut
       await db.query(
         `UPDATE invitations SET status = 'accepted' WHERE id = $1`,
         [invitationId],
@@ -170,9 +168,7 @@ invitationRoutes.post(
         `SELECT cognito_sub FROM users WHERE id = $1`,
         [userId],
       );
-      const cognitoUser = await (
-        await import("../services/cognito.js")
-      ).getUserBySub(userResult.rows[0].cognito_sub);
+      const cognitoUser = await getUserBySub(userResult.rows[0].cognito_sub);
       if (cognitoUser.email !== invitation.email) {
         return c.json({ error: "Accès refusé" }, 403);
       }
