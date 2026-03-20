@@ -27,19 +27,15 @@ export default function Project() {
   const navigate = useNavigate();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [members, setMembers] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newTask, setNewTask] = useState({ name: "", description: "" });
 
   useEffect(() => {
     if (!projectId) return;
-    projectService
-      .getProject(projectId)
-      .then((res) => {
-        setProject(res.data);
-        return teamService.getMembers(res.data.team_id);
-      })
-      .then((res) => setMembers(res.data));
+    projectService.getProject(projectId).then((res) => {
+      setProject(res.data);
+      return teamService.getMembers(res.data.team_id);
+    });
 
     taskService.getTasks(projectId).then((res) => setTasks(res.data));
   }, [projectId]);

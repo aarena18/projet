@@ -13,13 +13,14 @@ import "dotenv/config";
 
 const app = new Hono();
 
-// CORS — doit être avant toutes les routes
 app.use(
   "/*",
   cors({
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
+      "https://d9h4wti3hoh38.cloudfront.net",
+      "https://d2s2k9mtp1g74v.cloudfront.net",
       process.env.FRONTEND_URL || "",
     ],
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
